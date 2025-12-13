@@ -1,0 +1,33 @@
+# Java / Maven / Gradle
+*.class
+*.jar
+*.war
+*.ear
+target/
+build/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Logs
+Logs/
+*.log
+
+# Selenium / WebDriver binaries
+drivers/
+chromedriver*
+geckodriver*
+safaridriver*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TestNG / Reports
+Reports/
+screenshots/
+extent-config.xml
