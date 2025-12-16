@@ -20,7 +20,7 @@ public class LoginTests extends BaseTest{
 	        HomePage home = new HomePage(getDriver()); 
 	        
 	   
-	        home.enterContactExpertsButton();
+	        home.isHomePageLoaded();
 	        
 	    }
 

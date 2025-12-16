@@ -1,11 +1,11 @@
 package com.robust.core.drivers;
 
-import java.util.logging.Logger;
 
 import org.openqa.selenium.WebDriver;
-
 import com.robust.utils.ConfigReader;
 import com.robust.utils.LoggerUtil;
+
+
 
 public class DriverManager {
 
@@ -14,13 +14,8 @@ public class DriverManager {
 
     public static void createDriver() {
 
-        // Read browser from config.properties
-        String browser = ConfigReader.get("browser").toLowerCase();
-
-        // Check if Safari is requested
-        if (ConfigReader.get("safari_browser").equalsIgnoreCase("true")) {
-            browser = "safari";
-        }
+        // Read browser from ConfigReader
+        String browser = ConfigReader.getBrowser().toLowerCase();
 
         log.info("Launching browser: " + browser);
 
@@ -32,18 +27,18 @@ public class DriverManager {
 
     public static WebDriver getDriver() {
         if (driver.get() == null) {
-            log.error("Driver is NULL! Call createDriver() first.");
-            throw new RuntimeException("Driver is not initialized.");
+            log.error("WebDriver is NULL! Did you forget to call createDriver()?");
+            throw new RuntimeException("Driver not initialized. Call createDriver() first.");
         }
         return driver.get();
     }
 
     public static void quitDriver() {
         if (driver.get() != null) {
-            log.info("Quitting driver...");
+            log.info("Closing browser...");
             driver.get().quit();
             driver.remove();
-            log.info("Driver quit successfully.");
+            log.info("Browser closed successfully.");
         }
     }
 }

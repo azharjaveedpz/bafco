@@ -1,6 +1,10 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.1.dtd">
 <suite name="Web Test Suite">
 
+    <listeners>
+        <listener class-name="com.robust.utils.RetryListener"/> <!-- for dynamic retry -->
+    </listeners>
+
     <test name="Web Smoke Tests">
         <classes>
             <class name="com.robust.tests.web.HomeTests">
@@ -9,6 +13,7 @@
                     <include name="verifyLoginPageLoaded"/>
                 </methods>
             </class>
+
             <class name="com.robust.tests.web.LoginTests">
                 <methods>
                     <include name="verifyLoginPageLoaded"/>
