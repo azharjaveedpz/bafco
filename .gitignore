@@ -31,3 +31,4 @@ Thumbs.db
 Reports/
 screenshots/
 extent-config.xml
+test-output/   # Add this line to ignore TestNG output

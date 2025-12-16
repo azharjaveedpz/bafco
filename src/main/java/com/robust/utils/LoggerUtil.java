@@ -19,24 +19,28 @@ import org.apache.logging.log4j.core.appender.FileAppender;
 
 public class LoggerUtil {
 
-    private static final ConcurrentHashMap<Class<?>, Logger> loggers = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Logger> loggers = new ConcurrentHashMap<>();
+    private static final String RUN_TIMESTAMP = new SimpleDateFormat("HH-mm-ss").format(new Date());
 
+    
     public static Logger getLogger(Class<?> cls) {
-
-        return loggers.computeIfAbsent(cls, LoggerUtil::createLogger);
+        return loggers.computeIfAbsent(cls.getName(), LoggerUtil::createLogger);
     }
 
-    private static Logger createLogger(Class<?> cls) {
+    // Overloaded method to create logger by name (String)
+    public static Logger getLogger(String name) {
+        return loggers.computeIfAbsent(name, LoggerUtil::createLogger);
+    }
 
+    
+    private static Logger createLogger(String name) {
         try {
             String basePath = System.getProperty("user.dir") + "/Logs";
-
             String datePath = new SimpleDateFormat("yyyy/MM/dd").format(new Date());
             String logDir = basePath + "/" + datePath;
             new File(logDir).mkdirs();
 
-            String timeStamp = new SimpleDateFormat("HH-mm-ss").format(new Date());
-            String logFile = logDir + "/" + cls.getSimpleName() + "_" + timeStamp + ".log";
+            String logFile = logDir + "/" + name + "_" + RUN_TIMESTAMP + ".log";
 
             LoggerContext context = (LoggerContext) LogManager.getContext(false);
             Configuration config = context.getConfiguration();
@@ -45,18 +49,16 @@ public class LoggerUtil {
                     .withPattern("%d{HH:mm:ss} %-5level %c{1} - %msg%n")
                     .build();
 
-            // FILE appender
             FileAppender fileAppender = FileAppender.newBuilder()
-                    .setName(cls.getSimpleName() + "_File")
+                    .setName(name + "_FileAppender")
                     .withFileName(logFile)
                     .withAppend(true)
                     .setLayout(layout)
                     .build();
             fileAppender.start();
 
-            // CONSOLE appender
             ConsoleAppender consoleAppender = ConsoleAppender.newBuilder()
-                    .setName(cls.getSimpleName() + "_Console")
+                    .setName(name + "_ConsoleAppender")
                     .setLayout(layout)
                     .build();
             consoleAppender.start();
@@ -72,7 +74,7 @@ public class LoggerUtil {
             LoggerConfig loggerConfig = LoggerConfig.createLogger(
                     false,
                     Level.INFO,
-                    cls.getName(),
+                    name,
                     "true",
                     refs,
                     null,
@@ -83,14 +85,22 @@ public class LoggerUtil {
             loggerConfig.addAppender(fileAppender, Level.INFO, null);
             loggerConfig.addAppender(consoleAppender, Level.INFO, null);
 
-            config.addLogger(cls.getName(), loggerConfig);
+            config.addLogger(name, loggerConfig);
             context.updateLoggers();
 
-            return LogManager.getLogger(cls);
+            return LogManager.getLogger(name);
 
         } catch (Exception e) {
             e.printStackTrace();
-            return LogManager.getLogger(cls);
+            return LogManager.getLogger(name);
         }
+    }
+
+    
+    public static String getLogFilePath(String name) {
+        String basePath = System.getProperty("user.dir") + "/Logs";
+        String datePath = new SimpleDateFormat("yyyy/MM/dd").format(new Date());
+        String logDir = basePath + "/" + datePath;
+        return logDir + "/" + name + "_" + RUN_TIMESTAMP + ".log";
     }
 }

@@ -64,6 +64,11 @@ public class HomePage {
     // Validations
     // ===========================
     public boolean isHomePageLoaded() {
-        return WaitUtils.waitForVisible(driver, contactbutton, 10).isDisplayed();
+        try {
+            return WaitUtils.waitForVisible(driver, contactbutton, 10).isDisplayed();
+        } catch (Exception e) {
+            throw new AssertionError("Home Page NOT loaded: Contact button not visible", e);
+        }
     }
+
 }

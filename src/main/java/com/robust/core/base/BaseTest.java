@@ -13,8 +13,10 @@ import com.robust.utils.ConfigReader;
 import com.robust.utils.LoggerUtil;
 
 
+
 @Listeners(TestListener.class)
 public class BaseTest {
+
     private static final Logger log = LoggerUtil.getLogger(BaseTest.class);
 
     @BeforeClass
@@ -25,16 +27,17 @@ public class BaseTest {
         DriverManager.createDriver();
 
         // Launch URL from config.properties
-        String url = ConfigReader.getURL();
+        String url = ConfigReader.getBaseUrl();
         getDriver().get(url);
+
         log.info("Navigated to URL: " + url);
     }
+
     @AfterClass
     public void tearDown() {
         log.info("===== Finished Test Class: " + this.getClass().getSimpleName() + " =====");
         DriverManager.quitDriver();
     }
-
 
     protected WebDriver getDriver() {
         return DriverManager.getDriver();
@@ -48,5 +51,3 @@ public class BaseTest {
         return getDriver().getTitle();
     }
 }
-
-
