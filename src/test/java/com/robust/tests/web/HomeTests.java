@@ -19,6 +19,7 @@ public class HomeTests extends BaseTest {
 	public void verifyHomePageLoaded() {
 	    HomePage home = new HomePage(getDriver());
 	    home.enterContactExpertsButton();
+	    Assert.fail("Force failure to test retry");
 	}
 
 	@Test(description = "Verify Login Page loads successfully")
