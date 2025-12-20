@@ -136,9 +136,14 @@ public class TestListener implements ITestListener {
     // ================== SUITE FINISH ==================
     @Override
     public void onFinish(ITestContext context) {
-        // 🤖 AI Summary Section in Extent
+
+        // ===== AI SUMMARY (NON-TEST) =====
         ExtentTest aiSummary = ExtentManager.getExtent()
-                .createTest("🤖 AI Execution Summary");
+                .createTest("AI Execution Summary");
+
+        // Mark this as INFO so it won't affect pass/fail stats
+        aiSummary.getModel().setStatus(com.aventstack.extentreports.Status.INFO);
+       // aiSummary.assignCategory("SUMMARY");
 
         aiSummary.info("UI Failures: " + AIMetrics.getUiFailures());
         aiSummary.info("API Failures: " + AIMetrics.getApiFailures());
@@ -149,9 +154,12 @@ public class TestListener implements ITestListener {
         aiSummary.info("AI Insight:");
         aiSummary.info(AIInsightGenerator.generateInsight());
 
+        // ===== FLUSH REPORT =====
         ExtentManager.flushReports();
+
         suiteLogger.info("Test suite finished: " + context.getName());
     }
+
 
     // ================== LOG ATTACHMENT ==================
     private void attachLogFile(ExtentTest test, ITestResult result) {
