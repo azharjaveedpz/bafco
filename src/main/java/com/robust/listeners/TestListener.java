@@ -1,6 +1,11 @@
 package com.robust.listeners;
 
 import com.aventstack.extentreports.ExtentTest;
+import com.robust.ai.AIFailureType;
+import com.robust.ai.AIMetrics;
+import com.robust.ai.AIFailureClassifier;
+import com.robust.ai.AIInsightGenerator;
+
 import com.robust.annotations.TestInfo;
 import com.robust.core.drivers.DriverManager;
 import com.robust.reports.ExtentManager;
@@ -14,29 +19,36 @@ import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
+import java.io.File;
+import org.testng.ITestContext;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import org.apache.logging.log4j.Logger;
+
 public class TestListener implements ITestListener {
 
-    private static final Logger log = LoggerUtil.getLogger(TestListener.class);
+    private static final Logger suiteLogger = LoggerUtil.getLogger(TestListener.class);
 
     // ================== SUITE START ==================
     @Override
     public void onStart(ITestContext context) {
         ExtentManager.getExtent();
-        log.info("Test suite started: " + context.getName());
+        AIMetrics.reset(); // Reset AI metrics for this execution
+        suiteLogger.info("Test suite started: " + context.getName());
     }
 
     // ================== TEST START ==================
     @Override
     public void onTestStart(ITestResult result) {
-
         String className = result.getTestClass().getRealClass().getSimpleName();
         String methodName = result.getMethod().getMethodName();
         String description = result.getMethod().getDescription();
 
         // Create per-test logger
-        String logFileName = className + "_" + methodName;
-        Logger testLogger = LoggerUtil.getLogger(logFileName);
-        result.setAttribute("logger", testLogger); // Save logger for later
+        Logger testLogger = LoggerUtil.getLogger(className + "_" + methodName);
+        result.setAttribute("logger", testLogger);
 
         TestInfo info = result.getMethod()
                 .getConstructorOrMethod()
@@ -45,14 +57,12 @@ public class TestListener implements ITestListener {
 
         String priority = info != null ? info.priority().name() : "NotDefined";
 
-        // Header WITHOUT severity (only on fail)
-        String headerHtml =
-                "<table style='width:100%; border-collapse:collapse;'>"
-              + "<tr>"
-              + "<td style='width:120px; font-weight:bold;'>Priority: " + priority + "</td>"
-              + "<td>" + (description != null ? description : "") + "</td>"
-              + "</tr>"
-              + "</table>";
+        String headerHtml = "<table style='width:100%; border-collapse:collapse;'>"
+                + "<tr>"
+                + "<td style='width:120px; font-weight:bold;'>Priority: " + priority + "</td>"
+                + "<td>" + (description != null ? description : "") + "</td>"
+                + "</tr>"
+                + "</table>";
 
         ExtentTest test = ExtentManager.getExtent()
                 .createTest(className + "." + methodName, headerHtml);
@@ -72,6 +82,9 @@ public class TestListener implements ITestListener {
         test.pass("Test Passed");
         attachLogFile(test, result);
 
+        // 🤖 AI tracking
+        AIMetrics.recordPass(result);
+
         log.info("Test Passed: " + result.getMethod().getMethodName());
     }
 
@@ -82,7 +95,19 @@ public class TestListener implements ITestListener {
         Logger log = (Logger) result.getAttribute("logger");
 
         Throwable error = result.getThrowable();
-        String screenshotPath = ScreenshotUtils.captureScreenshot(result.getMethod().getMethodName());
+        String screenshotPath = null;
+
+        try {
+            if (DriverManager.getDriver() != null) {
+                screenshotPath = ScreenshotUtils.captureScreenshot(
+                    result.getMethod().getMethodName()
+                );
+            } else {
+                log.warn("Driver is null. Screenshot skipped.");
+            }
+        } catch (Exception e) {
+            log.error("Screenshot capture failed", e);
+        }
 
         TestInfo info = result.getMethod()
                 .getConstructorOrMethod()
@@ -92,48 +117,40 @@ public class TestListener implements ITestListener {
         String priority = info != null ? info.priority().name() : "NotDefined";
         String severity = info != null ? info.severity().name() : "NotDefined";
 
-        // Update header for failed test
-        String updatedHeader =
-                "<table style='width:100%; border-collapse:collapse;'>"
-              + "<tr>"
-              + "<td style='width:120px; font-weight:bold;'>Priority: " + priority + "</td>"
-              + "<td style='width:160px; font-weight:bold; color:red;'>Severity: " + severity + "</td>"
-              + "<td>" + result.getMethod().getDescription() + "</td>"
-              + "</tr>"
-              + "</table>";
+        AIFailureType failureType = AIFailureClassifier.classify(error);
+        AIMetrics.recordFailure(failureType, result);
 
-        test.getModel().setDescription(updatedHeader);
+        test.fail("Test Failed (" + failureType + "): " + error.getMessage());
 
-        test.fail("Test Failed: " + error.getMessage())
-            .addScreenCaptureFromPath(screenshotPath);
+        if (screenshotPath != null) {
+            test.addScreenCaptureFromPath(screenshotPath);
+        }
 
         attachLogFile(test, result);
 
-        log.error("Test Failed: " + result.getMethod().getMethodName()
-                + " | Priority: " + priority
-                + " | Severity: " + severity
-                + " | Reason: " + error.getMessage(), error);
+        log.error("Test Failed: " + result.getMethod().getMethodName(), error);
 
-        DriverManager.quitDriver();
-    }
-
-    // ================== TEST SKIPPED ==================
-    @Override
-    public void onTestSkipped(ITestResult result) {
-        ExtentTest test = ExtentManager.getTest();
-        Logger log = (Logger) result.getAttribute("logger");
-
-        test.skip("Test Skipped");
-        attachLogFile(test, result);
-
-        log.warn("Test Skipped: " + result.getMethod().getMethodName());
+       
     }
 
     // ================== SUITE FINISH ==================
     @Override
     public void onFinish(ITestContext context) {
+        // 🤖 AI Summary Section in Extent
+        ExtentTest aiSummary = ExtentManager.getExtent()
+                .createTest("🤖 AI Execution Summary");
+
+        aiSummary.info("UI Failures: " + AIMetrics.getUiFailures());
+        aiSummary.info("API Failures: " + AIMetrics.getApiFailures());
+        aiSummary.info("Automation Failures: " + AIMetrics.getAutomationFailures());
+        aiSummary.info("Timeout Failures: " + AIMetrics.getTimeoutFailures());
+        aiSummary.info("Flaky Tests Detected: " + AIMetrics.getFlakyCount());
+
+        aiSummary.info("AI Insight:");
+        aiSummary.info(AIInsightGenerator.generateInsight());
+
         ExtentManager.flushReports();
-        log.info("Test suite finished: " + context.getName());
+        suiteLogger.info("Test suite finished: " + context.getName());
     }
 
     // ================== LOG ATTACHMENT ==================
@@ -144,9 +161,8 @@ public class TestListener implements ITestListener {
 
         File logFile = new File(logPath);
         if (logFile.exists()) {
-            // clickable link in report
-            test.info("📄 Execution Log: <a href='file:///" + logFile.getAbsolutePath() +
-                      "' target='_blank'>" + logFile.getName() + "</a>");
+            test.info("📄 Execution Log: <a href='file:///" + logFile.getAbsolutePath()
+                    + "' target='_blank'>" + logFile.getName() + "</a>");
         } else {
             test.info("📄 Execution Log not found");
         }

@@ -3,7 +3,9 @@ package com.robust.core.base;
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 
 
@@ -19,7 +21,7 @@ public class BaseTest {
 
     private static final Logger log = LoggerUtil.getLogger(BaseTest.class);
 
-    @BeforeClass
+    @BeforeMethod(alwaysRun = true)
     public void setUp() {
         log.info("===== Starting Test Class: " + this.getClass().getSimpleName() + " =====");
 
@@ -33,7 +35,7 @@ public class BaseTest {
         log.info("Navigated to URL: " + url);
     }
 
-    @AfterClass
+    @AfterMethod(alwaysRun = true)
     public void tearDown() {
         log.info("===== Finished Test Class: " + this.getClass().getSimpleName() + " =====");
         DriverManager.quitDriver();
@@ -50,4 +52,5 @@ public class BaseTest {
     protected String getPageTitle() {
         return getDriver().getTitle();
     }
+    
 }
