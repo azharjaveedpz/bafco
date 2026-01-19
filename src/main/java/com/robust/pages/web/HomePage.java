@@ -7,7 +7,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
+import com.aventstack.extentreports.ExtentTest;
 import com.robust.core.base.BaseTest;
+import com.robust.reports.ExtentManager;
 import com.robust.utils.LoggerUtil;
 import com.robust.utils.StepLogger;
 import com.robust.utils.WaitUtils;
@@ -45,19 +47,24 @@ public class HomePage {
     // ===========================
     // Page Actions
     // ===========================
+    
+    
+    ExtentTest test = ExtentManager.getTest();
+
     public HomePage enterContactExpertsButton() {
 
-        String step = "Click on 'Contact the Experts' button";
-        String expected = "User should navigate to Contact Experts page";
+     
+        test.info("STEP: Click on 'Contact the Experts' button");
+        test.info("EXPECTED: User should navigate to Contact Experts page");
 
         contactbutton.click();
 
-        String actual = "Page title after click: " + driver.getTitle();
-
-        StepLogger.step(log, step, expected, actual);
+        test.info("ACTUAL: Page title after click: " + driver.getTitle());
 
         return this;
     }
+
+
 
 
     // ===========================
